@@ -1,0 +1,7 @@
+CLAIM FORM - Health Insurance
+Claimant Name: Ramesh Gupta
+Policy Number: POL-H-33333
+Date of Incident: 2024-04-05
+Claim Type: Health
+Major cardiac surgery with ICU stay.
+Total cost: Rs. 3,50,000

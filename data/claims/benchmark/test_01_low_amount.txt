@@ -1,0 +1,7 @@
+CLAIM FORM - Health Insurance
+Claimant Name: Arun Kumar
+Policy Number: POL-H-11111
+Date of Incident: 2024-02-10
+Claim Type: Health
+Minor fever consultation at clinic.
+Total cost: Rs. 2,500

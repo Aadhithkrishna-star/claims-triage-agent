@@ -1,0 +1,7 @@
+CLAIM FORM - Health Insurance
+Claimant Name: Sunita Devi
+Policy Number: POL-H-22222
+Date of Incident: 2024-03-20
+Claim Type: Health
+Hospitalized for dengue fever for 5 days.
+Total cost: Rs. 85,000
