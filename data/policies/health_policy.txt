@@ -1,0 +1,19 @@
+Health Insurance Policy - Gold Plan
+Policy Number Format: POL-H-XXXXX
+
+Section 1: Coverage and Limits
+- Maximum claim amount per incident: Rs. 2,00,000
+- Annual deductible: Rs. 10,000
+- Pre-existing conditions are NOT covered for the first 24 months
+
+Section 2: Claim Processing Rules
+- Claims below Rs. 50,000: Auto-approved if documents are complete
+- Claims between Rs. 50,000 and Rs. 2,00,000: Require human review
+- Claims above Rs. 2,00,000: Must be escalated to senior adjuster
+- Emergency hospitalization claims are processed within 24 hours
+
+Section 3: Exclusions
+- Cosmetic procedures
+- Pre-existing conditions (first 24 months)
+- Self-inflicted injuries
+- Injuries from adventure sports

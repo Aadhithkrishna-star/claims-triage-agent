@@ -1,0 +1,20 @@
+Motor Insurance Policy - Comprehensive Plan
+Policy Number Format: POL-M-XXXXX
+
+Section 1: Coverage and Limits
+- Maximum claim amount per incident: Rs. 5,00,000
+- Third-party liability: Unlimited as per Motor Vehicles Act
+- Own damage deductible: Rs. 5,000
+
+Section 2: Claim Processing Rules
+- Claims below Rs. 25,000: Auto-approved if documents complete
+- Claims between Rs. 25,000 and Rs. 1,00,000: Human review required
+- Claims above Rs. 1,00,000: Escalate to senior adjuster
+- Accident claims require police FIR copy
+
+Section 3: Exclusions
+- Driving under influence of alcohol/drugs
+- Driving without valid license
+- Mechanical failure due to poor maintenance
+- Racing or speed testing
+- Commercial use of private vehicle
