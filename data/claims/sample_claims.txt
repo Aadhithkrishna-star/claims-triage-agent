@@ -1,0 +1,24 @@
+CLAIM FORM - Health Insurance
+
+Claimant Name: Rajesh Kumar
+Policy Number: POL-H-12345
+Date of Incident: 2024-03-15
+Claim Type: Health
+
+Details of Claim:
+The claimant was admitted to Apollo Hospital on March 15, 2024, 
+due to acute appendicitis. Emergency appendectomy was performed.
+Total hospitalization cost: Rs. 75,000
+Room charges: Rs. 20,000
+Surgery charges: Rs. 40,000
+Medication: Rs. 15,000
+
+Doctor's Notes:
+Patient presented with severe abdominal pain. CT scan confirmed 
+acute appendicitis. Laparoscopic appendectomy performed successfully.
+Patient discharged after 3 days.
+
+Supporting Documents:
+- Hospital discharge summary
+- Surgery bills
+- Prescription receipts

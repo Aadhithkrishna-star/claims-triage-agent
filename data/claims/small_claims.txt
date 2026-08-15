@@ -1,0 +1,12 @@
+CLAIM FORM - Health Insurance
+
+Claimant Name: Priya Sharma
+Policy Number: POL-H-99999
+Date of Incident: 2024-05-10
+Claim Type: Health
+
+Details:
+Minor outpatient consultation for fever.
+Total cost: Rs. 3,500
+Medication: Rs. 1,500
+Consultation: Rs. 2,000
