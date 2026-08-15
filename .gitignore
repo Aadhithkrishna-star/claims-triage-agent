@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.env
+
+# Data & databases
+data/uploads/*
+data/chroma_db/
+data/audit.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
