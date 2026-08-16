@@ -1,5 +1,7 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
+import streamlit as st
 
-from app.ui import *
+st.title("Test")
+name = st.text_input("Your name")
+
+if st.button("Say Hello"):
+    st.write(f"Hello {name}!")
