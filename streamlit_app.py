@@ -12,6 +12,14 @@ import traceback
 
 st.set_page_config(page_title="Claims Triage Agent", layout="wide")
 
+# ── Initialize audit database (hardened) ─────────────────────────────────────
+try:
+    from app.services.audit.logger import init_db
+    init_db()
+except Exception as e:
+    import logging
+    logging.warning(f"Audit DB init skipped: {e}")
+
 # Check API key
 groq_key = os.getenv("GROQ_API_KEY", "")
 if not groq_key:
