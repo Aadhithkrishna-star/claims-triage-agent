@@ -22,13 +22,21 @@ def init_db():
     conn.close()
 
 
-def log_step(trace_id: str, status: str, message: str = "", 
-             node: str = "", step_name: str = "", claim_id: str = ""):
-    """Accepts both 'node' and 'step_name' for compatibility."""
+def log_step(**kwargs):
+    """
+    Accept ANY keyword arguments from triage_agent.py.
+    Maps common names to table columns, ignores unknown ones.
+    """
+    trace_id = kwargs.get("trace_id", kwargs.get("claim_id", "unknown"))
+    claim_id = kwargs.get("claim_id", trace_id)
+    node = kwargs.get("node", kwargs.get("step_name", kwargs.get("step", "unknown")))
+    status = kwargs.get("status", "unknown")
+    message = kwargs.get("message", kwargs.get("input_data", kwargs.get("error", "")))
+    
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         "INSERT INTO audit_logs (trace_id, claim_id, node, timestamp, status, message) VALUES (?, ?, ?, ?, ?, ?)",
-        (trace_id, claim_id, step_name or node, datetime.utcnow().isoformat(), status, message)
+        (trace_id, claim_id, node, datetime.utcnow().isoformat(), status, message)
     )
     conn.commit()
     conn.close()
