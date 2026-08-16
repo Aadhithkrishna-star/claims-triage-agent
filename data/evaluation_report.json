@@ -1,0 +1,70 @@
+{
+  "total_tests": 5,
+  "correct_decisions": 5,
+  "accuracy": 1.0,
+  "avg_latency_ms": 4394.6,
+  "avg_confidence": 0.91,
+  "total_citations": 0,
+  "results": [
+    {
+      "test_id": "test_01_low_amount",
+      "claim_type": "health",
+      "claim_amount": 2500.0,
+      "expected_status": "auto_approved",
+      "predicted_status": "auto_approved",
+      "correct": true,
+      "confidence": 0.95,
+      "latency_ms": 19922,
+      "citations_count": 0,
+      "error": ""
+    },
+    {
+      "test_id": "test_02_medium_amount",
+      "claim_type": "health",
+      "claim_amount": 85000.0,
+      "expected_status": "human_review",
+      "predicted_status": "human_review",
+      "correct": true,
+      "confidence": 0.85,
+      "latency_ms": 735,
+      "citations_count": 0,
+      "error": ""
+    },
+    {
+      "test_id": "test_03_high_amount",
+      "claim_type": "health",
+      "claim_amount": 350000.0,
+      "expected_status": "escalated",
+      "predicted_status": "escalated",
+      "correct": true,
+      "confidence": 0.9,
+      "latency_ms": 376,
+      "citations_count": 0,
+      "error": ""
+    },
+    {
+      "test_id": "test_04_motor_low",
+      "claim_type": "motor",
+      "claim_amount": 8000.0,
+      "expected_status": "auto_approved",
+      "predicted_status": "auto_approved",
+      "correct": true,
+      "confidence": 0.95,
+      "latency_ms": 445,
+      "citations_count": 0,
+      "error": ""
+    },
+    {
+      "test_id": "test_05_motor_high",
+      "claim_type": "motor",
+      "claim_amount": 150000.0,
+      "expected_status": "escalated",
+      "predicted_status": "escalated",
+      "correct": true,
+      "confidence": 0.9,
+      "latency_ms": 495,
+      "citations_count": 0,
+      "error": ""
+    }
+  ]
+}
