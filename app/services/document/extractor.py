@@ -2,17 +2,13 @@
 Use Groq LLM to extract structured claim data from raw text.
 """
 import json
+import os
+import streamlit as st
 from openai import OpenAI
 from app.core.config import settings
 from app.core.logging import logger
 from app.models.schemas import ClaimExtractedData
 
-
-# Create Groq client (OpenAI-compatible)
-llm_client = OpenAI(
-    api_key=settings.LLM_API_KEY,
-    base_url=settings.LLM_BASE_URL,
-)
 
 # Prompt template - we fill in {text} later
 EXTRACTION_PROMPT = """You are an insurance claims data extraction engine.
@@ -45,12 +41,21 @@ Claim document text:
 """
 
 
+def _get_llm_client():
+    """Create Groq client lazily so secrets are loaded first."""
+    api_key = settings.LLM_API_KEY or os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY not found. Check Streamlit secrets or environment variables.")
+    return OpenAI(api_key=api_key, base_url=settings.LLM_BASE_URL)
+
+
 async def extract_claim_data(text: str) -> ClaimExtractedData:
     """
     Send text to Groq LLM and get structured claim data back.
     """
     try:
-        # Call Groq API (OpenAI-compatible)
+        llm_client = _get_llm_client()
+        
         response = llm_client.chat.completions.create(
             model=settings.LLM_MODEL,
             messages=[
@@ -63,28 +68,23 @@ async def extract_claim_data(text: str) -> ClaimExtractedData:
                     "content": EXTRACTION_PROMPT.replace("{{TEXT}}", text)
                 }
             ],
-            temperature=0,      # 0 = deterministic, no creativity
-            max_tokens=800,     # Limit response length
+            temperature=0,
+            max_tokens=800,
         )
         
-        # Get raw text from LLM
         raw_output = response.choices[0].message.content
         logger.info(f"LLM raw output: {raw_output[:200]}...")
         
-        # Clean markdown code blocks if LLM wrapped JSON in ```
         cleaned = raw_output.strip()
         if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]           # Remove ```json
+            cleaned = cleaned[7:]
         if cleaned.startswith("```"):
-            cleaned = cleaned[3:]           # Remove ```
+            cleaned = cleaned[3:]
         if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]          # Remove trailing ```
+            cleaned = cleaned[:-3]
         cleaned = cleaned.strip()
         
-        # Parse JSON string into Python dict
         data_dict = json.loads(cleaned)
-        
-        # Validate with Pydantic - catches wrong types, missing required fields
         extracted = ClaimExtractedData(**data_dict)
         
         logger.info(f"Successfully extracted claim for: {extracted.claimant_name}")
