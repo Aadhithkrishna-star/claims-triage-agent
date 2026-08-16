@@ -2,7 +2,8 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "audit.db")
+# Use a NEW filename so old schema is abandoned
+DB_PATH = os.path.join(os.path.dirname(__file__), "audit_v2.db")
 
 
 def init_db():
@@ -23,15 +24,11 @@ def init_db():
 
 
 def log_step(**kwargs):
-    """
-    Accept ANY keyword arguments from triage_agent.py.
-    Maps common names to table columns, ignores unknown ones.
-    """
     trace_id = kwargs.get("trace_id", kwargs.get("claim_id", "unknown"))
     claim_id = kwargs.get("claim_id", trace_id)
     node = kwargs.get("node", kwargs.get("step_name", kwargs.get("step", "unknown")))
     status = kwargs.get("status", "unknown")
-    message = kwargs.get("message", kwargs.get("input_data", kwargs.get("error", "")))
+    message = kwargs.get("message", kwargs.get("input_data", kwargs.get("error", str(kwargs))))
     
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
