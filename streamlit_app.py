@@ -10,24 +10,17 @@ import asyncio
 import concurrent.futures
 import traceback
 
-# Initialize audit database
-from app.services.audit.logger import init_db
-try:
-    init_db()
-except Exception:
-    pass
-
 st.set_page_config(page_title="Claims Triage Agent", layout="wide")
-# ... rest stays the same
 
-# Check API key
-groq_key = os.getenv("GROQ_API_KEY")
-if not groq_key:
-    st.sidebar.error("⚠️ GROQ_API_KEY not found!")
-    st.sidebar.info("Go to Streamlit Cloud Settings → Secrets and add your key.")
-    st.stop()
-else:
-    st.sidebar.success("✅ API Key found")
+# DIAGNOSTIC: Show what env vars are loaded
+st.sidebar.header("🔍 Diagnostics")
+groq_key = os.getenv("GROQ_API_KEY", "NOT FOUND")
+st.sidebar.write(f"GROQ_KEY loaded: {'✅ Yes' if groq_key != 'NOT FOUND' else '❌ No'}")
+st.sidebar.write(f"Key prefix: {groq_key[:10]}..." if groq_key != 'NOT FOUND' else "")
+
+# Check other env vars
+st.sidebar.write(f"OPENAI_API_KEY: {'✅' if os.getenv('OPENAI_API_KEY') else '❌'}")
+st.sidebar.write(f"LANGCHAIN_API_KEY: {'✅' if os.getenv('LANGCHAIN_API_KEY') else '❌'}")
 
 st.title("🛡️ Regulated Claims Triage Agent")
 st.markdown("Upload an insurance claim document to get an AI-powered routing decision.")
@@ -64,7 +57,6 @@ with col2:
     )
 
 def run_async_in_thread(coro):
-    """Run async code in a separate thread to avoid event loop conflicts."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(asyncio.run, coro)
         return future.result()
@@ -79,7 +71,6 @@ if st.button("🚀 Process Claim", type="primary"):
         
         with st.spinner("Loading AI models & processing... (first time ~30s, please wait)"):
             try:
-                # Lazy import — only loads when button is clicked
                 from app.services.agent.triage_agent import run_triage
                 
                 async def process():
@@ -98,6 +89,8 @@ if st.button("🚀 Process Claim", type="primary"):
                 
                 if result.get("error"):
                     st.error(f"Agent Error: {result['error']}")
+                    with st.expander("🔍 Full Error Details"):
+                        st.json(result)
                 else:
                     decision = result["decision"]
                     
@@ -132,7 +125,7 @@ if st.button("🚀 Process Claim", type="primary"):
                     
             except Exception as e:
                 st.error(f"Processing failed: {str(e)}")
-                with st.expander("🔍 Error Details"):
+                with st.expander("🔍 Full Error Traceback"):
                     st.code(traceback.format_exc())
 
 st.divider()
