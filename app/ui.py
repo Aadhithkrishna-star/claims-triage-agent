@@ -1,13 +1,17 @@
 """
 Streamlit UI for the Claims Triage Agent.
-Run with: streamlit run app/ui.py
+Self-contained version for Streamlit Cloud deployment.
 """
 import streamlit as st
-import requests
-import json
+import uuid
+import time
+from datetime import datetime
+import asyncio
+import sys
+from pathlib import Path
 
-API_URL = "http://localhost:8000/api/v1"
-
+# Add repo root to path (for Streamlit Cloud)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 st.set_page_config(page_title="Claims Triage Agent", layout="wide")
 
@@ -53,33 +57,43 @@ if st.button("🚀 Process Claim", type="primary"):
     if not uploaded_file:
         st.error("Please upload a claim document.")
     else:
-        with st.spinner("Processing claim through AI agent..."):
-            # Call API
-            files = {"document": (uploaded_file.name, uploaded_file.getvalue())}
-            data = {
-                "policy_number": policy_number,
-                "claim_type": claim_type,
-                "incident_date": incident_date.strftime("%Y-%m-%d"),
-            }
+        with st.spinner("Loading AI models... (first time only, ~30s)"):
+            # LAZY IMPORT - only load when button is clicked
+            from app.services.agent.triage_agent import run_triage
+            
+            trace_id = str(uuid.uuid4())
+            start_time = time.time()
+            file_bytes = uploaded_file.getvalue()
+            
+            async def process_claim():
+                return await run_triage(
+                    trace_id=trace_id,
+                    file_bytes=file_bytes,
+                    filename=uploaded_file.name,
+                    policy_number=policy_number,
+                    claim_type=claim_type,
+                    incident_date=incident_date.strftime("%Y-%m-%d"),
+                )
             
             try:
-                response = requests.post(
-                    f"{API_URL}/claims/upload",
-                    data=data,
-                    files=files,
-                    timeout=60,
-                )
-                result = response.json()
+                try:
+                    result = asyncio.run(process_claim())
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    result = loop.run_until_complete(process_claim())
                 
-                if response.status_code == 200:
-                    # Display results
+                processing_time = int((time.time() - start_time) * 1000)
+                
+                if result.get("error"):
+                    st.error(f"Error: {result['error']}")
+                else:
+                    decision = result["decision"]
+                    
                     st.success("Claim processed successfully!")
+                    st.code(f"Trace ID: {trace_id}", language="text")
                     
-                    # Trace ID
-                    st.code(f"Trace ID: {result['trace_id']}", language="text")
-                    
-                    # Decision card
-                    status = result["status"]
+                    status = decision.status
                     status_colors = {
                         "auto_approved": "green",
                         "human_review": "orange",
@@ -90,31 +104,25 @@ if st.button("🚀 Process Claim", type="primary"):
                     st.markdown(f"""
                     <div style='padding: 20px; border-radius: 10px; background-color: {color}20; border-left: 5px solid {color};'>
                         <h3 style='margin: 0; color: {color};'>Decision: {status.replace("_", " ").title()}</h3>
-                        <p style='margin: 5px 0;'><strong>Confidence:</strong> {result['decision']['confidence']}</p>
-                        <p style='margin: 5px 0;'><strong>Reason:</strong> {result['decision']['reason']}</p>
-                        <p style='margin: 5px 0;'><strong>Action:</strong> {result['decision']['recommended_action']}</p>
+                        <p style='margin: 5px 0;'><strong>Confidence:</strong> {decision.confidence}</p>
+                        <p style='margin: 5px 0;'><strong>Reason:</strong> {decision.reason}</p>
+                        <p style='margin: 5px 0;'><strong>Action:</strong> {decision.recommended_action}</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Extracted data
                     with st.expander("📋 Extracted Data"):
                         st.json(result["extracted_data"])
                     
-                    # Policy citations
                     with st.expander("📚 Policy Citations"):
-                        for i, citation in enumerate(result["decision"]["policy_citations"], 1):
+                        for i, citation in enumerate(decision.policy_citations, 1):
                             st.markdown(f"**{i}.** {citation}")
                     
-                    # Performance
-                    st.caption(f"⏱️ Processing time: {result['processing_time_ms']} ms")
-                    
-                else:
-                    st.error(f"Error: {result.get('detail', 'Unknown error')}")
+                    st.caption(f"⏱️ Processing time: {processing_time} ms")
                     
             except Exception as e:
-                st.error(f"Failed to connect to API: {e}")
-                st.info("Make sure the FastAPI server is running: `uvicorn app.main:app --reload`")
+                st.error(f"Processing failed: {e}")
+                import traceback
+                st.code(traceback.format_exc())
 
-# Footer
 st.divider()
 st.caption("Built for Moring AI interview | Open-source stack | ₹0 cost")
