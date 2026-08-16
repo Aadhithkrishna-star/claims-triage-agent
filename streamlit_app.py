@@ -10,7 +10,15 @@ import asyncio
 import concurrent.futures
 import traceback
 
+# Initialize audit database
+from app.services.audit.logger import init_db
+try:
+    init_db()
+except Exception:
+    pass
+
 st.set_page_config(page_title="Claims Triage Agent", layout="wide")
+# ... rest stays the same
 
 # Check API key
 groq_key = os.getenv("GROQ_API_KEY")
