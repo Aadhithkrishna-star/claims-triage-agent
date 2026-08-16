@@ -19,7 +19,8 @@ langchain==0.2.0
 langgraph==0.2.76
 
 # Vector DB
-faiss-cpu==1.8.0
+faiss-cpu
+
 
 # Document Processing (lightweight, no heavy OCR for now)
 PyPDF2==3.0.0
