@@ -6,11 +6,11 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "audit.db")
 
 
 def init_db():
-    """Create the audit_logs table if it doesn't exist."""
     conn = sqlite3.connect(DB_PATH)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS audit_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trace_id TEXT,
             claim_id TEXT,
             node TEXT,
             timestamp TEXT,
@@ -22,17 +22,15 @@ def init_db():
     conn.close()
 
 
-def log_audit(claim_id: str, node: str, status: str, message: str = ""):
-    """Write a single audit log row."""
+def log_step(trace_id: str, node: str, status: str, message: str = "", claim_id: str = ""):
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
-        "INSERT INTO audit_logs (claim_id, node, timestamp, status, message) VALUES (?, ?, ?, ?, ?)",
-        (claim_id, node, datetime.utcnow().isoformat(), status, message)
+        "INSERT INTO audit_logs (trace_id, claim_id, node, timestamp, status, message) VALUES (?, ?, ?, ?, ?, ?)",
+        (trace_id, claim_id, node, datetime.utcnow().isoformat(), status, message)
     )
     conn.commit()
     conn.close()
 
 
-def log_step(claim_id: str, node: str, status: str, message: str = ""):
-    """Alias for log_audit — used by triage_agent.py."""
-    log_audit(claim_id, node, status, message)
+def log_audit(claim_id: str, node: str, status: str, message: str = ""):
+    log_step(trace_id=claim_id, claim_id=claim_id, node=node, status=status, message=message)
