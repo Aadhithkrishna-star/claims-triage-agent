@@ -16,11 +16,8 @@ st.set_page_config(page_title="Claims Triage Agent", layout="wide")
 st.sidebar.header("🔍 Diagnostics")
 groq_key = os.getenv("GROQ_API_KEY", "NOT FOUND")
 st.sidebar.write(f"GROQ_KEY loaded: {'✅ Yes' if groq_key != 'NOT FOUND' else '❌ No'}")
-st.sidebar.write(f"Key prefix: {groq_key[:10]}..." if groq_key != 'NOT FOUND' else "")
-
-# Check other env vars
-st.sidebar.write(f"OPENAI_API_KEY: {'✅' if os.getenv('OPENAI_API_KEY') else '❌'}")
-st.sidebar.write(f"LANGCHAIN_API_KEY: {'✅' if os.getenv('LANGCHAIN_API_KEY') else '❌'}")
+if groq_key != "NOT FOUND":
+    st.sidebar.write(f"Key prefix: {groq_key[:15]}...")
 
 st.title("🛡️ Regulated Claims Triage Agent")
 st.markdown("Upload an insurance claim document to get an AI-powered routing decision.")
@@ -129,4 +126,4 @@ if st.button("🚀 Process Claim", type="primary"):
                     st.code(traceback.format_exc())
 
 st.divider()
-st.caption("Built for Moring AI interview | Open-source stack | ₹0 cost")
+st.caption("Built for Moring AI interview | Open-source stack")
