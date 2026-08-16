@@ -2,7 +2,6 @@ import sqlite3
 import os
 from datetime import datetime
 
-# Use the same path everywhere — Streamlit Cloud persists /mount/src but not /tmp
 DB_PATH = os.path.join(os.path.dirname(__file__), "audit.db")
 
 
@@ -32,3 +31,8 @@ def log_audit(claim_id: str, node: str, status: str, message: str = ""):
     )
     conn.commit()
     conn.close()
+
+
+def log_step(claim_id: str, node: str, status: str, message: str = ""):
+    """Alias for log_audit — used by triage_agent.py."""
+    log_audit(claim_id, node, status, message)
