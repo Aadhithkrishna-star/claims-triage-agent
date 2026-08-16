@@ -22,11 +22,13 @@ def init_db():
     conn.close()
 
 
-def log_step(trace_id: str, node: str, status: str, message: str = "", claim_id: str = ""):
+def log_step(trace_id: str, status: str, message: str = "", 
+             node: str = "", step_name: str = "", claim_id: str = ""):
+    """Accepts both 'node' and 'step_name' for compatibility."""
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         "INSERT INTO audit_logs (trace_id, claim_id, node, timestamp, status, message) VALUES (?, ?, ?, ?, ?, ?)",
-        (trace_id, claim_id, node, datetime.utcnow().isoformat(), status, message)
+        (trace_id, claim_id, step_name or node, datetime.utcnow().isoformat(), status, message)
     )
     conn.commit()
     conn.close()
