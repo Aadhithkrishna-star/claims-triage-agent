@@ -111,15 +111,16 @@ if "last_result" in st.session_state:
     </div>
     """, unsafe_allow_html=True)
     
+    # Full Extracted Data FIRST (after decision)
+    with st.expander("🔍 Full Extracted Data"):
+        st.json(extracted_dict)
+    
+    # Policy Citations LAST (at the very bottom)
     with st.expander("📚 Policy Citations"):
         for i, c in enumerate(d.policy_citations, 1):
             st.markdown(f"**{i}.** {c}")
     
-    with st.expander("🔍 Full Extracted Data"):
-        st.json(extracted_dict)
-    
     st.caption(f"⏱️ {result.get('elapsed_ms', 0)} ms | Trace ID: `{result.get('trace_id', '')}`")
-
 # ── Process button ───────────────────────────────────────────────────────────
 if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
     if not uploaded_file:
