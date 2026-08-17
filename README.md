@@ -1,6 +1,6 @@
 # 🛡️ Claims Triage Agent
 
-### Enterprise AI Application | Production-Ready Insurance Claims Processing
+### Enterprise AI Application | Insurance Claims Triage System
 
 
 🚀 [Live Demo](https://claims-triage-agent-waa3retvpk6goouzxyhedd.streamlit.app/)  
