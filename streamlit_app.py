@@ -28,7 +28,7 @@ if not groq_key:
     st.info("Go to Streamlit Cloud → Settings → Secrets. Add: GROQ_API_KEY = 'gsk_...' then REBOOT.")
     st.stop()
 
-st.sidebar.success(f"✅ Key loaded: {groq_key[:10]}...")
+st.sidebar.success("✅ API key loaded")
 
 st.title("🛡️ Claims Triage Agent")
 st.markdown("Upload a claim document. The AI will extract all details automatically.")
@@ -71,7 +71,23 @@ with col2:
             pass
     incident_date = st.date_input("Incident Date", value=date_val)
 
+# ── File uploader with auto-clear on new upload ──────────────────────────────
 uploaded_file = st.file_uploader("📄 Upload Claim Document", type=["txt", "pdf"], accept_multiple_files=False)
+
+# Clear previous result when a NEW file is uploaded
+if uploaded_file is not None:
+    # Check if this is a different file from last time
+    current_file_name = uploaded_file.name
+    last_file_name = st.session_state.get("last_uploaded_file", "")
+    
+    if current_file_name != last_file_name:
+        # New file uploaded — clear previous result and extracted fields
+        st.session_state.pop("last_result", None)
+        st.session_state.pop("extracted_policy", None)
+        st.session_state.pop("extracted_type", None)
+        st.session_state.pop("extracted_date", None)
+        st.session_state["last_uploaded_file"] = current_file_name
+        st.rerun()
 
 def run_async_in_thread(coro):
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -121,6 +137,7 @@ if "last_result" in st.session_state:
             st.markdown(f"**{i}.** {c}")
     
     st.caption(f"⏱️ {result.get('elapsed_ms', 0)} ms | Trace ID: `{result.get('trace_id', '')}`")
+
 # ── Process button ───────────────────────────────────────────────────────────
 if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
     if not uploaded_file:
