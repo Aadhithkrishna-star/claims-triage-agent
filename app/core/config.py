@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     LLM_API_KEY: str = ""
     LLM_BASE_URL: str = "https://api.groq.com/openai/v1"
-    LLM_MODEL: str = "llama-3.3-70b-versatile"
+    LLM_MODEL: str = "openai/gpt-oss-120b"
     
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     

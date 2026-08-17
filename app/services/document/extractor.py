@@ -19,7 +19,7 @@ Return ONLY a valid JSON object. No explanation. No markdown formatting.
 Required JSON format:
 {
     "claimant_name": "full name of claimant",
-    "policy_number": "policy number string",
+    "policy_number": "policy number string (e.g. POL-H-12345)",
     "claim_amount": 75000,
     "incident_date": "2024-03-15",
     "claim_type": "health",
@@ -27,19 +27,25 @@ Required JSON format:
     "description": "brief description of incident"
 }
 
-Rules:
-- claim_amount: number only, no currency symbols or commas
-- incident_date: must be YYYY-MM-DD format
+Extraction rules:
+- claimant_name: full name as written in document
+- policy_number: exact policy number string (e.g. POL-M-78452, POL-H-12345)
+- claim_amount: total claim amount as number only, no currency symbols or commas
+- incident_date: MUST be YYYY-MM-DD format. Convert any date format found in document.
 - claim_type: must be exactly one of: health, motor, home, travel
 - injury_type: type of injury/illness/damage, or null if not applicable
-- description: 1-2 sentence summary, or null
-- If any field is missing or unclear, use null for optional fields (injury_type, description)
-- For claim_amount, if you see "Rs. 75,000" return 75000
+- description: 1-2 sentence summary of the incident
+
+Formatting rules:
+- If claim_amount shows "Rs. 1,35,000" → return 135000
+- If date shows "April 18, 2025" → return "2025-04-18"
+- If date shows "18/04/2025" → return "2025-04-18"
+- If any field is missing or unclear, use null
+- For motor claims, injury_type should describe the vehicle damage
 
 Claim document text:
 {{TEXT}}
 """
-
 
 def _get_llm_client():
     """Create Groq client lazily so secrets are loaded first."""
