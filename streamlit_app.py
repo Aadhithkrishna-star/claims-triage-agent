@@ -9,6 +9,7 @@ import os
 import asyncio
 import concurrent.futures
 import traceback
+from datetime import datetime
 
 st.set_page_config(page_title="Claims Triage Agent", layout="wide")
 
@@ -32,29 +33,40 @@ st.sidebar.success(f"✅ Key loaded: {groq_key[:10]}...")
 st.title("🛡️ Claims Triage Agent")
 st.markdown("Upload a claim document. The AI will extract all details automatically.")
 
-# ── Claim Details (editable, auto-filled after extraction) ───────────────────
+# ── Claim Details (editable, auto-filled from previous extraction) ───────────
 st.subheader("📋 Claim Details")
 st.caption("These fields auto-populate from your document. You can edit them if needed.")
+
+# Get stored values from session state (set after previous processing)
+stored_policy = st.session_state.get("extracted_policy", "")
+stored_type = st.session_state.get("extracted_type", "")
+stored_date_str = st.session_state.get("extracted_date", "")
 
 col1, col2 = st.columns(2)
 with col1:
     policy_number = st.text_input(
         "Policy Number",
-        value=st.session_state.get("extracted_policy", ""),
+        value=stored_policy,
         placeholder="e.g. POL-M-78452"
     )
-    claim_type = st.selectbox(
-        "Claim Type",
-        ["", "health", "motor", "home", "travel"],
-        index=["", "health", "motor", "home", "travel"].index(st.session_state.get("extracted_type", "")) if st.session_state.get("extracted_type", "") in ["", "health", "motor", "home", "travel"] else 0
-    )
+    
+    # Build claim type options with extracted type first if not in list
+    type_options = ["", "health", "motor", "home", "travel"]
+    if stored_type and stored_type not in type_options:
+        type_options.append(stored_type)
+    
+    try:
+        type_index = type_options.index(stored_type)
+    except ValueError:
+        type_index = 0
+    
+    claim_type = st.selectbox("Claim Type", type_options, index=type_index)
+
 with col2:
-    # Convert stored date string to date object for date_input
-    from datetime import datetime
     date_val = None
-    if st.session_state.get("extracted_date"):
+    if stored_date_str:
         try:
-            date_val = datetime.strptime(st.session_state["extracted_date"], "%Y-%m-%d").date()
+            date_val = datetime.strptime(stored_date_str, "%Y-%m-%d").date()
         except:
             pass
     incident_date = st.date_input("Incident Date", value=date_val)
@@ -65,6 +77,50 @@ def run_async_in_thread(coro):
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(asyncio.run, coro).result()
 
+# ── Results display area (persists across reruns via session state) ──────────
+if "last_result" in st.session_state:
+    result = st.session_state["last_result"]
+    d = result["decision"]
+    extracted_dict = result.get("extracted_dict", {})
+    
+    st.divider()
+    
+    # ── Extracted info FIRST ──
+    st.subheader("📋 Extracted Information")
+    info_cols = st.columns(4)
+    with info_cols[0]:
+        st.metric("Claimant", extracted_dict.get("claimant_name", "N/A"))
+    with info_cols[1]:
+        st.metric("Policy", extracted_dict.get("policy_number", "N/A"))
+        st.metric("Type", extracted_dict.get("claim_type", "N/A"))
+    with info_cols[2]:
+        amt = extracted_dict.get("claim_amount", 0) or 0
+        st.metric("Amount", f"₹{amt:,}")
+        st.metric("Date", extracted_dict.get("incident_date", "N/A"))
+    with info_cols[3]:
+        st.metric("Injury/Damage", extracted_dict.get("injury_type") or "N/A")
+    
+    # ── Decision box SECOND ──
+    color = {"auto_approved":"green","human_review":"orange","escalated":"red"}.get(d.status,"gray")
+    st.markdown(f"""
+    <div style='padding:20px;border-radius:10px;background:{color}20;border-left:5px solid {color};margin-top:20px;'>
+        <h3 style='margin:0;color:{color}'>Decision: {d.status.replace('_',' ').title()}</h3>
+        <p><b>Confidence:</b> {d.confidence}</p>
+        <p><b>Reason:</b> {d.reason}</p>
+        <p><b>Recommended Action:</b> {d.recommended_action}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("📚 Policy Citations"):
+        for i, c in enumerate(d.policy_citations, 1):
+            st.markdown(f"**{i}.** {c}")
+    
+    with st.expander("🔍 Full Extracted Data"):
+        st.json(extracted_dict)
+    
+    st.caption(f"⏱️ {result.get('elapsed_ms', 0)} ms | Trace ID: `{result.get('trace_id', '')}`")
+
+# ── Process button ───────────────────────────────────────────────────────────
 if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
     if not uploaded_file:
         st.error("Please upload a document.")
@@ -104,47 +160,20 @@ if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
                     else:
                         extracted_dict = extracted or {}
                     
-                    # ── Store extracted values in session state to auto-fill fields ──
+                    # Store in session state for display AND field auto-fill
                     st.session_state["extracted_policy"] = extracted_dict.get("policy_number", "")
                     st.session_state["extracted_type"] = extracted_dict.get("claim_type", "")
                     st.session_state["extracted_date"] = extracted_dict.get("incident_date", "")
                     
-                    # ── Show extracted info FIRST (swapped position) ──
-                    st.subheader("📋 Extracted Information")
-                    info_cols = st.columns(4)
-                    with info_cols[0]:
-                        st.metric("Claimant", extracted_dict.get("claimant_name", "N/A"))
-                    with info_cols[1]:
-                        st.metric("Policy", extracted_dict.get("policy_number", "N/A"))
-                        st.metric("Type", extracted_dict.get("claim_type", "N/A"))
-                    with info_cols[2]:
-                        amt = extracted_dict.get("claim_amount", 0) or 0
-                        st.metric("Amount", f"₹{amt:,}")
-                        st.metric("Date", extracted_dict.get("incident_date", "N/A"))
-                    with info_cols[3]:
-                        st.metric("Injury/Damage", extracted_dict.get("injury_type") or "N/A")
+                    # Store full result for display
+                    st.session_state["last_result"] = {
+                        "decision": d,
+                        "extracted_dict": extracted_dict,
+                        "trace_id": trace_id,
+                        "elapsed_ms": int((time.time()-start)*1000)
+                    }
                     
-                    # ── Decision box SECOND ──
-                    color = {"auto_approved":"green","human_review":"orange","escalated":"red"}.get(d.status,"gray")
-                    st.markdown(f"""
-                    <div style='padding:20px;border-radius:10px;background:{color}20;border-left:5px solid {color};margin-top:20px;'>
-                        <h3 style='margin:0;color:{color}'>Decision: {d.status.replace('_',' ').title()}</h3>
-                        <p><b>Confidence:</b> {d.confidence}</p>
-                        <p><b>Reason:</b> {d.reason}</p>
-                        <p><b>Recommended Action:</b> {d.recommended_action}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    with st.expander("📚 Policy Citations"):
-                        for i, c in enumerate(d.policy_citations, 1):
-                            st.markdown(f"**{i}.** {c}")
-                    
-                    with st.expander("🔍 Full Extracted Data"):
-                        st.json(extracted_dict)
-                    
-                    st.caption(f"⏱️ Processed in {int((time.time()-start)*1000)} ms | Trace ID: `{trace_id}`")
-                    
-                    # Rerun to auto-fill the input fields with extracted data
+                    # Clear file uploader and rerun to show results + filled fields
                     st.rerun()
                     
             except Exception as e:
