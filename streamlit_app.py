@@ -199,4 +199,3 @@ if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
                 st.code(traceback.format_exc())
 
 st.divider()
-st.caption("Built for Moring AI interview")
