@@ -2,17 +2,16 @@
 
 ### Enterprise AI Application | Insurance Claims Triage System
 
-
-🚀 [Live Demo](https://claims-triage-agent-waa3retvpk6goouzxyhedd.streamlit.app/)  
-<sup>↗️ Ctrl+Click or Right-click → "Open link in new tab"</sup>
-
- 💻 **[Source Code](https://github.com/aadhithkrishna/star-claims-triage-agent)**
-
 An AI-powered insurance claims triage system built with **LangGraph, Groq LLM, FAISS, Sentence Transformers, Pydantic, SQLite, and Streamlit**.
 
 The system automatically analyzes insurance claim documents, retrieves relevant policy information, and determines whether a claim should be **auto-approved, sent for human review, or escalated**.
 
 Designed with a strong focus on **reliability, auditability, explainability, and production readiness** for regulated enterprise environments
+
+🚀 [Live Demo](https://claims-triage-agent-waa3retvpk6goouzxyhedd.streamlit.app/)  
+<sup>↗️ Ctrl+Click or Right-click → "Open link in new tab"</sup>
+
+ 💻 **[Source Code](https://github.com/aadhithkrishna/star-claims-triage-agent)**
 
 ---
 ## 🚀 What This Project Does
