@@ -32,18 +32,20 @@ st.sidebar.success(f"✅ Key loaded: {groq_key[:10]}...")
 st.title("🛡️ Claims Triage Agent")
 st.markdown("Upload a claim document. The AI will extract all details automatically.")
 
-# ── Optional overrides (hidden by default) ───────────────────────────────────
-with st.expander("⚙️ Optional: Override extracted fields"):
-    col1, col2 = st.columns(2)
-    with col1:
-        override_policy = st.text_input("Policy Number (optional)", placeholder="e.g. POL-M-78452")
-        override_type = st.selectbox(
-            "Claim Type (optional)", 
-            ["", "health", "motor", "home", "travel"],
-            index=0
-        )
-    with col2:
-        override_date = st.date_input("Incident Date (optional)", value=None)
+# ── Optional overrides (always visible, not in expander) ─────────────────────
+st.subheader("Manual Overrides (optional)")
+st.caption("Leave blank to auto-extract from document")
+
+col1, col2 = st.columns(2)
+with col1:
+    override_policy = st.text_input("Policy Number", placeholder="Auto-extracted from document")
+    override_type = st.selectbox(
+        "Claim Type", 
+        ["", "health", "motor", "home", "travel"],
+        index=0
+    )
+with col2:
+    override_date = st.date_input("Incident Date", value=None)
 
 uploaded_file = st.file_uploader("📄 Upload Claim Document", type=["txt", "pdf"], accept_multiple_files=False)
 
@@ -80,20 +82,29 @@ if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
                         st.json(result)
                 else:
                     d = result["decision"]
-                    extracted = result.get("extracted_data", {})
+                    extracted = result.get("extracted_data")
+                    
+                    # Handle both dict and Pydantic model
+                    if hasattr(extracted, "dict"):
+                        extracted_dict = extracted.dict()
+                    elif hasattr(extracted, "model_dump"):
+                        extracted_dict = extracted.model_dump()
+                    else:
+                        extracted_dict = extracted or {}
                     
                     # Show extracted info
                     st.subheader("📋 Extracted Information")
                     info_cols = st.columns(3)
                     with info_cols[0]:
-                        st.metric("Claimant", extracted.get("claimant_name", "N/A"))
-                        st.metric("Policy", extracted.get("policy_number", "N/A"))
+                        st.metric("Claimant", extracted_dict.get("claimant_name", "N/A"))
+                        st.metric("Policy", extracted_dict.get("policy_number", "N/A"))
                     with info_cols[1]:
-                        st.metric("Type", extracted.get("claim_type", "N/A"))
-                        st.metric("Amount", f"₹{extracted.get('claim_amount', 0):,}")
+                        st.metric("Type", extracted_dict.get("claim_type", "N/A"))
+                        amt = extracted_dict.get("claim_amount", 0) or 0
+                        st.metric("Amount", f"₹{amt:,}")
                     with info_cols[2]:
-                        st.metric("Date", extracted.get("incident_date", "N/A"))
-                        st.metric("Injury/Damage", extracted.get("injury_type") or "N/A")
+                        st.metric("Date", extracted_dict.get("incident_date", "N/A"))
+                        st.metric("Injury/Damage", extracted_dict.get("injury_type") or "N/A")
                     
                     # Decision box
                     color = {"auto_approved":"green","human_review":"orange","escalated":"red"}.get(d.status,"gray")
@@ -111,7 +122,7 @@ if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
                             st.markdown(f"**{i}.** {c}")
                     
                     with st.expander("🔍 Full Extracted Data"):
-                        st.json(extracted)
+                        st.json(extracted_dict)
                     
                     st.caption(f"⏱️ Processed in {int((time.time()-start)*1000)} ms | Trace ID: `{trace_id}`")
                     
