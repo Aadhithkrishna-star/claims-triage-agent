@@ -30,43 +30,35 @@ if not groq_key:
 st.sidebar.success(f"✅ Key loaded: {groq_key[:10]}...")
 
 st.title("🛡️ Claims Triage Agent")
-st.markdown("Upload a claim document to get an AI-powered routing decision.")
+st.markdown("Upload a claim document. The AI will extract all details automatically.")
 
-# ── Form inputs (no hardcoded defaults) ──────────────────────────────────────
-col1, col2 = st.columns(2)
+# ── Optional overrides (hidden by default) ───────────────────────────────────
+with st.expander("⚙️ Optional: Override extracted fields"):
+    col1, col2 = st.columns(2)
+    with col1:
+        override_policy = st.text_input("Policy Number (optional)", placeholder="e.g. POL-M-78452")
+        override_type = st.selectbox(
+            "Claim Type (optional)", 
+            ["", "health", "motor", "home", "travel"],
+            index=0
+        )
+    with col2:
+        override_date = st.date_input("Incident Date (optional)", value=None)
 
-with col1:
-    policy_number = st.text_input("Policy Number", placeholder="e.g. POL-H-12345")
-    claim_type = st.selectbox(
-        "Claim Type", 
-        ["", "health", "motor", "home", "travel"],
-        index=0,
-        help="Select the claim type, or leave blank to auto-detect from document"
-    )
-    incident_date = st.date_input("Incident Date", value=None)
-
-with col2:
-    uploaded_file = st.file_uploader("Upload Claim Document", type=["txt", "pdf"])
+uploaded_file = st.file_uploader("📄 Upload Claim Document", type=["txt", "pdf"], accept_multiple_files=False)
 
 def run_async_in_thread(coro):
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(asyncio.run, coro).result()
 
-# ── Validation ───────────────────────────────────────────────────────────────
-if st.button("🚀 Process Claim", type="primary"):
+if st.button("🚀 Process Claim", type="primary", disabled=not uploaded_file):
     if not uploaded_file:
         st.error("Please upload a document.")
-    elif not policy_number.strip():
-        st.error("Please enter a policy number.")
-    elif not claim_type:
-        st.error("Please select a claim type.")
-    elif incident_date is None:
-        st.error("Please select an incident date.")
     else:
         trace_id = str(uuid.uuid4())
         start = time.time()
         
-        with st.spinner("Processing... (~30s first time)"):
+        with st.spinner("Processing claim... (~30s first time)"):
             try:
                 from app.services.agent.triage_agent import run_triage
                 
@@ -75,9 +67,9 @@ if st.button("🚀 Process Claim", type="primary"):
                         trace_id=trace_id,
                         file_bytes=uploaded_file.getvalue(),
                         filename=uploaded_file.name,
-                        policy_number=policy_number.strip(),
-                        claim_type=claim_type,
-                        incident_date=incident_date.strftime("%Y-%m-%d"),
+                        policy_number=override_policy if override_policy else None,
+                        claim_type=override_type if override_type else None,
+                        incident_date=override_date.strftime("%Y-%m-%d") if override_date else None,
                     )
                 
                 result = run_async_in_thread(process())
@@ -88,28 +80,40 @@ if st.button("🚀 Process Claim", type="primary"):
                         st.json(result)
                 else:
                     d = result["decision"]
+                    extracted = result.get("extracted_data", {})
                     
-                    # ── Cross-validation: extracted type vs selected type ──
-                    extracted_type = result.get("extracted_data", {}).get("claim_type", "").lower()
-                    if extracted_type and extracted_type != claim_type:
-                        st.warning(f"⚠️ Mismatch detected: You selected **{claim_type}**, but the document indicates **{extracted_type}**. Please verify.")
+                    # Show extracted info
+                    st.subheader("📋 Extracted Information")
+                    info_cols = st.columns(3)
+                    with info_cols[0]:
+                        st.metric("Claimant", extracted.get("claimant_name", "N/A"))
+                        st.metric("Policy", extracted.get("policy_number", "N/A"))
+                    with info_cols[1]:
+                        st.metric("Type", extracted.get("claim_type", "N/A"))
+                        st.metric("Amount", f"₹{extracted.get('claim_amount', 0):,}")
+                    with info_cols[2]:
+                        st.metric("Date", extracted.get("incident_date", "N/A"))
+                        st.metric("Injury/Damage", extracted.get("injury_type") or "N/A")
                     
+                    # Decision box
                     color = {"auto_approved":"green","human_review":"orange","escalated":"red"}.get(d.status,"gray")
                     st.markdown(f"""
-                    <div style='padding:20px;border-radius:10px;background:{color}20;border-left:5px solid {color}'>
+                    <div style='padding:20px;border-radius:10px;background:{color}20;border-left:5px solid {color};margin-top:20px;'>
                         <h3 style='margin:0;color:{color}'>Decision: {d.status.replace('_',' ').title()}</h3>
                         <p><b>Confidence:</b> {d.confidence}</p>
                         <p><b>Reason:</b> {d.reason}</p>
-                        <p><b>Action:</b> {d.recommended_action}</p>
+                        <p><b>Recommended Action:</b> {d.recommended_action}</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    with st.expander("📋 Extracted Data"):
-                        st.json(result["extracted_data"])
                     with st.expander("📚 Policy Citations"):
                         for i, c in enumerate(d.policy_citations, 1):
                             st.markdown(f"**{i}.** {c}")
-                    st.caption(f"⏱️ {int((time.time()-start)*1000)} ms")
+                    
+                    with st.expander("🔍 Full Extracted Data"):
+                        st.json(extracted)
+                    
+                    st.caption(f"⏱️ Processed in {int((time.time()-start)*1000)} ms | Trace ID: `{trace_id}`")
                     
             except Exception as e:
                 st.error(f"Crash: {e}")
